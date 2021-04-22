@@ -218,9 +218,9 @@ namespace MQTT {
 
     function emqtt_connect_wifi(): void {
         serial.writeString("AT+CWMODE=3\r\n");
-        basic.pause(1000);
+        basic.pause(100);
         serial.writeString("AT+CWJAP=\"" + MQTT_SSID + "\",\"" + MQTT_SSIDPWD + "\"\r\n");
-        basic.pause(8000);
+        basic.pause(5000);
     }
 
     function emmqtt_connect_mqtt(): void {
@@ -228,7 +228,7 @@ namespace MQTT {
             emmqtt_serial_init()
         }
         serial.writeString("AT+MQTTUSERCFG=0,1,\"" + MQTT_CLIENT_ID + "\",\"" + MQTT_CLIENT_NAME + "\",\"" + MQTT_CLIENT_PASSWORD + "\",0,0,\"\"\r\n");
-        basic.pause(1000);
+        basic.pause(200);
         serial.writeString("AT+MQTTCONN=0,\"" + MQTT_SERVER_IP + "\"," + MQTT_SERVER_PORT + ",0\r\n");
         basic.pause(1000);
         // serial.writeString("AT+CIFSR\r\n");
@@ -240,11 +240,7 @@ namespace MQTT {
         }
         serial.writeString("AT+CIPSTART=\"TCP\",\"" + MQTT_SERVER_IP + "\"," + MQTT_SERVER_PORT + "\r\n");
         basic.pause(1000);
-
-        serial.writeString("AT+CIPMODE=1\r\n");
-        basic.pause(1000)
-        serial.writeString("AT+CIPSEND\r\n");
-        basic.pause(1000)
+        
     }
 
 
@@ -295,7 +291,6 @@ namespace MQTT {
             // basic.showString("mqtt connect success!");
             basic.showIcon(IconNames.Yes)
             basic.pause(1000);
-            
             return
         } else if (item.indexOf("WIFI DISCONNECT", 0) != -1) {
             EMMQTT_ANSWER_CMD = "MqttConnectFailure"
@@ -319,7 +314,6 @@ namespace MQTT {
             count = 0;
         } 
          else {
-
              if(count > 0){
                 // count++;
                 // basic.showNumber(count);
@@ -357,23 +351,35 @@ namespace MQTT {
         emmqtt_connect_iot("http");
         // serial.setRxBufferSize(500);
     }
-    
+
     //% blockId=em_http_get block="物联网模块http模式发送 get 请求 topic %topic"
     //% weight=98
     //% subcategory="http模式"
     export function em_http_get(topic: string): string {
         if (!EMMQTT_SERIAL_INIT) {
-            emmqtt_serial_init()
+            emmqtt_serial_init();
         }
+        serial.writeString("AT+CIPMODE=1\r\n");
+        basic.pause(50);
+        serial.writeString("AT+CIPSEND\r\n");
+        basic.pause(50);
         getMethod(topic);
         // return topic == MQTT_TOPIC?MQTT_MESSGE:"";
+        basic.pause(500);
+        serial.writeString("+++");
+        basic.pause(1500);
+        serial.writeString("AT+CIPMODE=0\r\n");
+        basic.pause(50);
+        serial.writeString("AT+CIPSTART=\"TCP\",\"" + MQTT_SERVER_IP + "\"," + MQTT_SERVER_PORT + "\r\n");
+        basic.pause(50);
         return HTTP_RESULT;
         // return "";
     }
 
     function getMethod(topic: string): void{
         emmqttClearRxBuffer();
-        
+        let startStr = topic.substr(0, 1);
+        if (startStr != "/") topic = "/" + topic;
         // basic.showString("a");
         let requestStr = "GET " + topic + " HTTP/1.1\r\n";
         if(!hasLetter(MQTT_SERVER_IP)){
@@ -387,23 +393,15 @@ namespace MQTT {
         // serial.setRxBufferSize(200);
         serial.writeString(requestStr);
         basic.pause(2000);
-        // serial.onDataReceived("\n", function () {
-        //     let Emqtt_message_str = serial.readString();
-        //     basic.showString(Emqtt_message_str);
-        // });
-        let length = HTTP_RESPONSE_STR.length;
-        // basic.showNumber(length);
+       
         let arr = HTTP_RESPONSE_STR.split("emok");
         if(arr.length >  4){
             let result = arr[arr.length - 4];
             HTTP_RESULT = (result.substr(0, result.length - 2));
-        }
-        // if(arr.length >  6){
-        //     let dataLength = arr[arr.length - 7];
-        //     basic.showString(dataLength);
-        // }
-        
+        } 
         HTTP_RESPONSE_STR = EMMQTT_STR_TYPE_IS_NONE;
+
+
     }
     
     function hasLetter(str: string) {
