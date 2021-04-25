@@ -188,7 +188,7 @@ namespace MQTT {
      * @param topic Mqtt topic; eg: test
      * @param qos QOS; eg: 0
     */
-    //% blockId=mqtt_subscribe block="MQTT订阅话题 %topic|QOS %qos"
+    //% blockId=mqtt_subscribe block="MQTT订阅话题(TOPIC) %topic|QOS %qos"
     //% weight=101
     //% subcategory="MQTT模式"
     export function em_mqtt_subscribe(topic: string, qos: number): void {
@@ -206,7 +206,7 @@ namespace MQTT {
      * @param topic Mqtt topic; eg: test
      * @param qos QOS; eg: 0
     */
-    //% blockId=em_mqtt_get_topic_message block="MQTT获取主题 %topic 数据"
+    //% blockId=em_mqtt_get_topic_message block="MQTT获取话题(TOPIC) %topic 数据"
     //% weight=100
     //% subcategory="MQTT模式"
     export function em_mqtt_get_topic_message(topic: string): string {
@@ -337,7 +337,7 @@ namespace MQTT {
     //% receive.fieldEditor="gridpicker" receive.fieldOptions.columns=3
     //% send.fieldEditor="gridpicker" send.fieldOptions.columns=3
     //% blockId=em_http_connect
-    //% block="MQTT物联网模块连接HTTP服务器 服务器地址 %serverIp 端口 %serverPort"
+    //% block="物联网模块连接HTTP服务器 服务器地址 %serverIp 端口 %serverPort"
     //% subcategory="HTTP模式"
     export function em_http_connect(/*mqtt*/ serverIp: string, serverPort: number
         ): void {
@@ -352,7 +352,7 @@ namespace MQTT {
         // serial.setRxBufferSize(500);
     }
 
-    //% blockId=em_http_get block="物联网模块HTTP模式发送GET请求地址%topic"
+    //% blockId=em_http_get block="物联网模块HTTP模式GET请求地址%topic"
     //% weight=98
     //% subcategory="HTTP模式"
     export function em_http_get(topic: string): string {
