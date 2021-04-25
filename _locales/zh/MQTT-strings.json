@@ -5,6 +5,6 @@
 	"MQTT.em_mqtt_subscribe|block": "MQTT 订阅话题 %topic|Qos %qos",
 	"MQTT.em_mqtt_get_topic_message|block": "MQTT 获取主题 %topic 数据",
 	"MQTT.em_http_connect|block": "MQTT物联网模块连接http服务器 服务器地址 %serverIp ｜ 端口 %serverPort",
-	"MQTT.em_http_get|block": "MQTT物联网模块发送 get 请求地址 %topic"
+	"MQTT.em_http_get|block": "物联网模块http模式发送 get 请求地址(topic) %topic"
 
 }
