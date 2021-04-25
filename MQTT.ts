@@ -352,7 +352,7 @@ namespace MQTT {
         // serial.setRxBufferSize(500);
     }
 
-    //% blockId=em_http_get block="物联网模块http模式发送 get 请求 topic %topic"
+    //% blockId=em_http_get block="物联网模块http模式发送 get 请求地址 %topic"
     //% weight=98
     //% subcategory="http模式"
     export function em_http_get(topic: string): string {
