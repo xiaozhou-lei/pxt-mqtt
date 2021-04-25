@@ -1,6 +1,14 @@
 # EMmqtt
 让用户非常容易接收和发送物联网信息，远程物联网控制从未如此简单。
 
+物联中心地址：https://aiot.huiwancode.com
+
+物联网编程步骤：
+1.注册账号
+2.添加物联硬件
+3.绘玩编程APP云集模块添加云数据进行交互
+4.查看配置并进行程序编写
+
 ![image](image/index.png)
 
 ## 硬件参数
@@ -75,4 +83,4 @@
 
 ![image](image/http_example.png)
 
-     解释：mqtt物联网模块设置P1，P2引脚为发送接收引脚，设置Wi-Fi配置，连接Wi-Fi；连接http服务器，端口为80，当按下microbit A键之后，mqtt模块发送get请求“test”,并且把接收到的请求数据在microbit点阵屏上显示。
+     解释：mqtt物联网模块设置P1，P2引脚为发送接收引脚，设置Wi-Fi配置，连接Wi-Fi；连接http服务器，端口为80，当按下microbit A键之后，mqtt模块发送get请求“dataset/get/id/ig54853k/secret/s7e00556i1kbi1ll/topic/84742/name/{替换为APP云集数据名称}”,并且把接收到的请求数据在microbit点阵屏上显示。
