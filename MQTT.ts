@@ -1,5 +1,4 @@
 
-
 const EMMQTT_BOOL_TYPE_IS_TRUE = true
 const EMMQTT_BOOL_TYPE_IS_FALSE = false
 const EMMQTT_ERROR_TYPE_IS_SUCCE = 0
@@ -220,7 +219,7 @@ namespace MQTT {
         serial.writeString("AT+CWMODE=3\r\n");
         basic.pause(100);
         serial.writeString("AT+CWJAP=\"" + MQTT_SSID + "\",\"" + MQTT_SSIDPWD + "\"\r\n");
-        basic.pause(5000);
+        basic.pause(500);
     }
 
     function emmqtt_connect_mqtt(): void {
@@ -365,9 +364,9 @@ namespace MQTT {
         basic.pause(50);
         getMethod(topic);
         // return topic == MQTT_TOPIC?MQTT_MESSGE:"";
-        // basic.pause(500);
+        // basic.pause(100);
         serial.writeString("+++");
-        basic.pause(1500);
+        basic.pause(1200);
         serial.writeString("AT+CIPMODE=0\r\n");
         basic.pause(50);
         serial.writeString("AT+CIPSTART=\"TCP\",\"" + MQTT_SERVER_IP + "\"," + MQTT_SERVER_PORT + "\r\n");
@@ -392,9 +391,10 @@ namespace MQTT {
         requestStr += "Connection: keep-alive\r\n\r\n";
         // serial.setRxBufferSize(200);
         serial.writeString(requestStr);
-        basic.pause(100);
+        basic.pause(1000);
        
         let arr = HTTP_RESPONSE_STR.split("emok");
+        // basic.showNumber(arr.length);
         if(arr.length >  4){
             let result = arr[arr.length - 4];
             HTTP_RESULT = (result.substr(0, result.length - 2));
