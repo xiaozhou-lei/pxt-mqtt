@@ -216,12 +216,36 @@ namespace MQTT {
     }
 
     function emqtt_connect_wifi(): void {
+		atReset();
         serial.writeString("AT+CWMODE=3\r\n");
         basic.pause(100);
         serial.writeString("AT+CWJAP=\"" + MQTT_SSID + "\",\"" + MQTT_SSIDPWD + "\"\r\n");
-        basic.pause(4000);
+        basic.pause(7000);
+		
     }
-
+	
+	function atReset(): void {
+		for (let i = 0; i < 3; i++) {
+			serial.writeString("AT\r\n");
+			basic.pause(1000);
+		}
+		serial.writeString("AT+RST\r\n");
+		// basic.pause(100);
+		serial.writeString("ATE0\r\n");
+		// basic.pause(100);
+		serial.writeString("AT+CWAUTOCONN=0\r\n");
+		// basic.pause(100);
+		serial.writeString("AT+CWMODE=1\r\n");
+		basic.pause(200);
+		serial.writeString("AT+CIPMUX=1\r\n");
+		// basic.pause(100);
+		serial.writeString("AT+CIPDINFO=1\r\n");
+		// basic.pause(100);
+		serial.writeString("AT+CWAUTOCONN=0\r\n");
+		// basic.pause(100);
+		serial.writeString("AT+CWDHCP=1,1\r\n");
+		basic.pause(200);
+	}
     function emmqtt_connect_mqtt(): void {
         if (!EMMQTT_SERIAL_INIT) {
             emmqtt_serial_init()
@@ -259,17 +283,17 @@ namespace MQTT {
                 Em_mqtt_icon_display()
                 iconnum += 1;
             }
-            if (EMMQTT_ANSWER_CMD == "MqttConneted") {
+            if (EMMQTT_ANSWER_CMD == "MqttWifiConneted") {
                 EMMQTT_ANSWER_CMD = EMMQTT_STR_TYPE_IS_NONE
                 break
-            } else if (EMMQTT_ANSWER_CMD == "MqttConnectFailure") {
+            } else if (EMMQTT_ANSWER_CMD == "MqttWifiConnectFailure") {
                 EMMQTT_ANSWER_CMD = EMMQTT_STR_TYPE_IS_NONE
                 return EMMQTT_ERROR_TYPE_IS_MQTT_CONNECT_FAILURE
             }
             basic.pause(1)
             _timeout += 1
         }
-        if (_timeout >= 1000 && EMMQTT_ANSWER_CMD != "MqttConneted") {
+        if (_timeout >= 1000 && EMMQTT_ANSWER_CMD != "MqttWifiConneted") {
             EMMQTT_ANSWER_CMD = EMMQTT_STR_TYPE_IS_NONE
             return EMMQTT_ERROR_TYPE_IS_MQTT_CONNECT_TIMEOUT
         }
@@ -285,14 +309,14 @@ namespace MQTT {
         // basic.showString(item);
         // emmqttClearRxBuffer();
         if (item.indexOf("WIFI CONNECTED", 0) != -1) {
-            EMMQTT_ANSWER_CMD = "MqttConneted"
+            EMMQTT_ANSWER_CMD = "MqttWifiConneted"
             EMMQTT_ANSWER_CONTENT = EMMQTT_STR_TYPE_IS_NONE
             // basic.showString("mqtt connect success!");
             basic.showIcon(IconNames.Yes)
             basic.pause(1000);
             return
         } else if (item.indexOf("WIFI DISCONNECT", 0) != -1) {
-            EMMQTT_ANSWER_CMD = "MqttConnectFailure"
+            EMMQTT_ANSWER_CMD = "MqttWifiConnectFailure"
             basic.showIcon(IconNames.No)
             return
         } else if (item.indexOf("+MQTTSUBRECV:", 0) != -1) {
@@ -355,6 +379,7 @@ namespace MQTT {
         serial.writeString("AT+CIPSTATUS\r\n");
         basic.pause(50);
         while (!HTTP_CONNECT_STATUS) {
+            emqtt_connect_wifi();
             emmqtt_connect_http();
             serial.writeString("AT+CIPSTATUS\r\n");
             basic.pause(50);
@@ -373,6 +398,7 @@ namespace MQTT {
         serial.writeString("AT+CIPSTATUS\r\n");
         basic.pause(50);
         while (!HTTP_CONNECT_STATUS) {
+            emqtt_connect_wifi();
             emmqtt_connect_http();
             serial.writeString("AT+CIPSTATUS\r\n");
             basic.pause(50);
