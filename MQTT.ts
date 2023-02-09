@@ -35,9 +35,15 @@ namespace MQTT {
     
     let EMMQTT_ANSWER_CMD = EMMQTT_STR_TYPE_IS_NONE
     let EMMQTT_ANSWER_CONTENT = EMMQTT_STR_TYPE_IS_NONE
+	//阿里云三要素
+	let EMMQTT_ALIYUN_PRODUCTKEY = EMMQTT_STR_TYPE_IS_NONE
+	let EMMQTT_ALIYUN_DEVICENAME = EMMQTT_STR_TYPE_IS_NONE
+	let EMMQTT_ALIYUN_DEVICESECRET = EMMQTT_STR_TYPE_IS_NONE
     // //animation
     let EMMQTT_WIFI_ICON = 1
     let EMMQTT_MQTT_ICON = 1
+
+    const mqttSubscribeHandlers: { [topic: string]: (message: string) => void } = {}
 
     export class PacketaMqtt {
        
@@ -101,8 +107,8 @@ namespace MQTT {
             EMMQTT_SERIAL_RX,
             BaudRate.BaudRate9600
         )
-        serial.setTxBufferSize(3000);
-        serial.setRxBufferSize(2000);
+        serial.setTxBufferSize(128);
+        serial.setRxBufferSize(128);
         // obloqWriteString("\r")
         item = serial.readString()
         EMMQTT_SERIAL_INIT = EMMQTT_BOOL_TYPE_IS_TRUE
@@ -165,13 +171,49 @@ namespace MQTT {
         MQTT_SERVER_PORT = serverPort;
         emmqtt_connect_iot("mqtt");
     }
+	
+	/**
+     * 
+     * @param clientId to clientId ,eg: "yourClientId"
+     * @param username to username ,eg: "yourClientName"
+	 * @param productKey ,eg: "productKey"
+	 * @param deviceName ,eg: "deviceName"
+	 * @param deviceSecret ,eg: "deviceSecret"
+     * @param clientPwd to clientPwd ,eg: "yourClientPwd"
+     * @param serverIp to serverIp ,eg: "yourServerIp"
+     * @param serverPort to serverPort ,eg: 1883  
+ 
+    */
+    //% weight=101
+    //% receive.fieldEditor="gridpicker" receive.fieldOptions.columns=3
+    //% send.fieldEditor="gridpicker" send.fieldOptions.columns=3
+    //% blockId=em_mqtt_aliyun_connect
+    //% block="MQTT模块连接阿里云服务初始设置 | 阿里云服务器: %serverIp| 端口: %serverPort| 产品key: %productKey|设备名称: %deviceName|设备秘钥: %deviceSecret  || 客户端ID: %clientId | 客户端用户名: %username | 客户端密码: %clientPwd"
+    //% subcategory="ALIYUNMQTT模式"
+    export function em_mqtt_aliyun_connect(/*mqtt*/ serverIp: string, serverPort: number, productKey: string, deviceName: string, deviceSecret: string, clientId?: string, username?: string, clientPwd?: string
+        ): void {
+       
+        // Emmqtt_serial_init();
+        // emqtt_connect_wifi();
+        MQTT_CLIENT_ID = clientId;
+        MQTT_CLIENT_NAME = username;
+        MQTT_CLIENT_PASSWORD = clientPwd;
+        MQTT_SERVER_IP = serverIp;
+        MQTT_SERVER_PORT = serverPort;
+		
+		EMMQTT_ALIYUN_PRODUCTKEY = productKey;
+		EMMQTT_ALIYUN_DEVICENAME = deviceName;
+		EMMQTT_ALIYUN_DEVICESECRET = deviceSecret;
+        emmqtt_connect_iot("aliyun");
+    }
+
 
     
 
-     //% blockId=mqtt_publish_basic block="MQTT向话题(TOPIC) %topic 发送数据 %data"
+    //% blockId=mqtt_publish_basic block="MQTT向话题(TOPIC) %topic 发送数据 %data"
     //% weight=100
     //% subcategory="MQTT模式"
-    export function em_mqtt_publish_basic(topic: string, data: string): void {
+    export function em_mqtt_publish_basic(topic: string, data: any): void {
         //AT+MQTTPUB=0,"topic","test",1,0
         // mqtt_publish(topic, data, 1, 0);
         if (!EMMQTT_SERIAL_INIT) {
@@ -187,7 +229,7 @@ namespace MQTT {
      * @param topic Mqtt topic; eg: test
      * @param qos QOS; eg: 0
     */
-    //% blockId=mqtt_subscribe block="MQTT订阅话题(TOPIC) %topic|QOS %qos"
+    //% blockId=mqtt_subscribe block="MQTT订阅话题 %topic|QOS %qos"
     //% weight=101
     //% subcategory="MQTT模式"
     export function em_mqtt_subscribe(topic: string, qos: number): void {
@@ -196,7 +238,6 @@ namespace MQTT {
         }
         topic = topic.replace(",", "");
         serial.writeString("AT+MQTTSUB=0,\"" + topic + "\"," + qos + "\r\n");
-        // serial.writeString(`WF 12 2 ${qos} ` + topic + ' 0\n')
         basic.pause(500);
     }
 
@@ -205,15 +246,17 @@ namespace MQTT {
      * @param topic Mqtt topic; eg: test
      * @param qos QOS; eg: 0
     */
-    //% blockId=em_mqtt_get_topic_message block="MQTT获取话题(TOPIC) %topic 数据"
+    //% blockId=em_mqtt_get_topic_message block="MQTT获取主题 %topic 数据"
     //% weight=100
     //% subcategory="MQTT模式"
-    export function em_mqtt_get_topic_message(topic: string): string {
+    export function em_mqtt_get_topic_message(topic: string,  handler: (message: string) => void) {
         if (!EMMQTT_SERIAL_INIT) {
             emmqtt_serial_init()
         }
-        return topic == MQTT_TOPIC?MQTT_MESSGE:"";
+        mqttSubscribeHandlers[topic] = handler;
     }
+
+
 
     function emqtt_connect_wifi(): void {
 		atReset();
@@ -229,6 +272,7 @@ namespace MQTT {
 			serial.writeString("AT\r\n");
 			basic.pause(1000);
 		}
+        serial.writeString("AT+CWQAP\r\n");
 		serial.writeString("AT+RST\r\n");
 		// basic.pause(100);
 		serial.writeString("ATE0\r\n");
@@ -246,6 +290,7 @@ namespace MQTT {
 		serial.writeString("AT+CWDHCP=1,1\r\n");
 		basic.pause(200);
 	}
+
     function emmqtt_connect_mqtt(): void {
         if (!EMMQTT_SERIAL_INIT) {
             emmqtt_serial_init()
@@ -256,7 +301,18 @@ namespace MQTT {
         basic.pause(1000);
         // serial.writeString("AT+CIFSR\r\n");
     }
-
+	
+	function emmqtt_connect_aliyun_mqtt(): void {
+        if (!EMMQTT_SERIAL_INIT) {
+            emmqtt_serial_init()
+        }
+        serial.writeString("AT+MQTTUSERCFG=0,1,\"" + MQTT_CLIENT_ID + "\",\"" + MQTT_CLIENT_NAME + "\",\"" + MQTT_CLIENT_PASSWORD + "\",0,0,\"\"\r\n");
+        basic.pause(200);
+        serial.writeString("AT+ALIYUN_MQTTCONN=\"" + MQTT_SERVER_IP + "\"," + MQTT_SERVER_PORT + ",\"" + EMMQTT_ALIYUN_PRODUCTKEY + "\",\"" + EMMQTT_ALIYUN_DEVICENAME + "\",\"" + EMMQTT_ALIYUN_DEVICESECRET + "\"\r\n");
+        basic.pause(1000);
+        // serial.writeString("AT+CIFSR\r\n");
+    }
+	
     function emmqtt_connect_http(): void {
         if (!EMMQTT_SERIAL_INIT) {
             emmqtt_serial_init()
@@ -277,7 +333,9 @@ namespace MQTT {
             emmqtt_connect_http();
         }else if (type == "mqtt"){
             emmqtt_connect_mqtt();
-        }
+        }else if (type == "aliyun") {
+			emmqtt_connect_aliyun_mqtt();
+		}
         while (_timeout < 1000) {
             if (_timeout % 50 == 0) {
                 Em_mqtt_icon_display()
@@ -300,10 +358,10 @@ namespace MQTT {
         return EMMQTT_ERROR_TYPE_IS_SUCCE
         //basic.showString("ok")
     }
-
+    let Emqtt_message_str = "";
     let count = 0;
-    serial.onDataReceived("\n", function () {
-        let Emqtt_message_str = serial.readString();
+    serial.onDataReceived(serial.delimiters(Delimiters.NewLine), function () {
+        Emqtt_message_str += serial.readString();
         let size = Emqtt_message_str.length;
         let item: string = Emqtt_message_str + "";
         // basic.showString(item);
@@ -314,23 +372,48 @@ namespace MQTT {
             // basic.showString("mqtt connect success!");
             basic.showIcon(IconNames.Yes)
             basic.pause(1000);
+            Emqtt_message_str = "";
             return
         } else if (item.indexOf("WIFI DISCONNECT", 0) != -1) {
             EMMQTT_ANSWER_CMD = "MqttWifiConnectFailure"
             basic.showIcon(IconNames.No)
+            Emqtt_message_str = "";
             return
-        } else if (item.indexOf("+MQTTSUBRECV:", 0) != -1) {
-            let offset = item.indexOf(",");
-            MQTT_TOPIC = item.substr(13, (offset - 13));
-            MQTT_MESSGE = item.substr(offset + 1, (size - offset - 1));
+        } else if (item.includes("MQTTSUBRECV")) {
+            // item = item.slice(item.indexOf("MQTTSUBRECV"))
+            item = item.replace("+MQTTSUBRECV:", "");
+            item = item.replace("MQTTSUBRECV:", "");
+            // basic.showString(item);
+            // let recvStringSplit = item.split(":")
+            let splitStr  = item.split(",");
+            let message = splitStr[1];
+            let resStr = "";
+            resStr = message.slice(0, message.length - 2)
+            if(resStr.includes("+")){
+                let messageSplit = resStr.split("+");
+                let messageStr = messageSplit[0]
+                if(messageStr.includes("AT")){
+                    resStr = messageStr.slice(0, messageStr.length - 4)
+                }else{
+                    resStr = messageStr.slice(0, messageStr.length - 2)
+                }
+            }
+            MQTT_MESSGE = resStr;
+            let topicStr = splitStr[0];
+            MQTT_TOPIC = topicStr;
+            mqttSubscribeHandlers[MQTT_TOPIC] && mqttSubscribeHandlers[MQTT_TOPIC](MQTT_MESSGE)
             EMMQTT_ANSWER_CMD = "SubOk"
             EMMQTT_ANSWER_CONTENT = EMMQTT_STR_TYPE_IS_NONE
+            Emqtt_message_str = "";
             return
         }else if (item.indexOf("STATUS:3", 0) != -1){
+            Emqtt_message_str = "";
             HTTP_CONNECT_STATUS = EMMQTT_BOOL_TYPE_IS_TRUE
         }else if (item.indexOf("STATUS:4", 0) != -1) {
+            Emqtt_message_str = "";
             HTTP_CONNECT_STATUS = EMMQTT_BOOL_TYPE_IS_FALSE
         }else if (item.indexOf("HTTP/1.1 200 OK") != -1) {
+            Emqtt_message_str = "";
             count = 1;
             // basic.showNumber(0);
             // let dataArr = item.split("\r\n\r\n");
@@ -339,8 +422,10 @@ namespace MQTT {
             // basic.showString(item);
         }else if(item == '0'){
             count = 0;
+            Emqtt_message_str = "";
         } 
          else {
+            Emqtt_message_str = "";
              if(count > 0){
                 // count++;
                 // basic.showNumber(count);
@@ -349,6 +434,7 @@ namespace MQTT {
             //  basic.showString(item);
             return
         }
+        
     });
 
     /**
@@ -364,7 +450,7 @@ namespace MQTT {
     //% receive.fieldEditor="gridpicker" receive.fieldOptions.columns=3
     //% send.fieldEditor="gridpicker" send.fieldOptions.columns=3
     //% blockId=em_http_connect
-    //% block="物联网模块连接HTTP服务器 服务器地址 %serverIp 端口 %serverPort"
+    //% block="MQTT物联网模块连接HTTP服务器 服务器地址 %serverIp 端口 %serverPort"
     //% subcategory="HTTP模式"
     export function em_http_connect(/*mqtt*/ serverIp: string, serverPort: number
         ): void {
@@ -388,7 +474,7 @@ namespace MQTT {
         // serial.setRxBufferSize(500);
     }
 
-    //% blockId=em_http_get block="物联网模块HTTP模式GET请求地址%topic"
+    //% blockId=em_http_get block="物联网模块HTTP模式发送GET请求地址%topic"
     //% weight=98
     //% subcategory="HTTP模式"
     export function em_http_get(topic: string): string {
